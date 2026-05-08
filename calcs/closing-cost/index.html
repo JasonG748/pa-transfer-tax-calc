@@ -553,6 +553,10 @@
         </select>
       </div>
       <div class="field">
+        <label>FICO Score <span class="hint">drives PMI grid</span></label>
+        <input type="number" id="q_fico" placeholder="750" min="300" max="900" step="1">
+      </div>
+      <div class="field">
         <label>Interest Rate</label>
         <input type="number" id="q_rate" placeholder="6.5" step="0.001" min="0" class="has-suffix">
         <span class="suffix">%</span>
@@ -636,7 +640,7 @@
     </div>
     <div class="financed-note" id="financedNote" style="display:none;"></div>
     <div class="disclaimer">
-      Estimate only. Title insurance based on PA TIRBOP basic rate (purchase). Recording fees, county-specific items, and lender overlays may vary.
+      Estimate only. Title insurance based on PA TIRBOP basic rate (purchase). PMI rates from a representative MGIC/Arch/Radian rate card (30yr fixed, OO SFR, no DTI adjuster) — actual quoted rate varies by MI provider and adjusters. Recording fees, county-specific items, and lender overlays may vary.
       LO should verify with title company and final disclosure before quoting borrower.
     </div>
   </div>
@@ -721,6 +725,41 @@ function tirbopBasic(amount){
 function lendersTitleSimul(){ return 100; }
 /* Lender's policy stand-alone (when owner's NOT issued): basic rate on loan amount. */
 function lendersTitleStandalone(loan){ return tirbopBasic(loan); }
+
+/* ── BPMI rate grid (representative MGIC/Arch/Radian rate card,
+     monthly BPMI, 30yr fixed, owner-occupied SFR, no DTI adjuster).
+     Annual % of loan amount. Real rates depend on adjusters
+     (DTI, LPMI, refi, condo, investor) — LO should verify with
+     MI provider for the actual quoted rate.                          */
+const PMI_GRID = [
+  /* LTV 95.01–97 (35% coverage) */
+  { ltvMax:97, ltvMin:95.01, rates:{760:0.55, 740:0.61, 720:0.85, 700:1.05, 680:1.30, 660:1.85, 640:2.40, 620:2.95} },
+  /* LTV 90.01–95 (30% coverage) */
+  { ltvMax:95, ltvMin:90.01, rates:{760:0.34, 740:0.41, 720:0.56, 700:0.74, 680:0.95, 660:1.42, 640:1.91, 620:2.43} },
+  /* LTV 85.01–90 (25% coverage) */
+  { ltvMax:90, ltvMin:85.01, rates:{760:0.22, 740:0.27, 720:0.36, 700:0.47, 680:0.62, 660:0.96, 640:1.32, 620:1.70} },
+  /* LTV 80.01–85 (12% coverage) */
+  { ltvMax:85, ltvMin:80.01, rates:{760:0.17, 740:0.18, 720:0.21, 700:0.24, 680:0.30, 660:0.46, 640:0.61, 620:0.79} },
+];
+const FICO_BUCKETS = [760, 740, 720, 700, 680, 660, 640, 620];
+
+function pmiBucketLabel(fico){
+  for (const b of FICO_BUCKETS) {
+    if (fico >= b) {
+      const top = b === 760 ? '+' : (`–${b+19}`);
+      return `${b}${top}`;
+    }
+  }
+  return null;
+}
+function lookupPmiRate(ltv, fico){
+  if (!ltv || ltv <= 80 || ltv > 97) return null;
+  if (!fico || fico < 620) return null;
+  const row = PMI_GRID.find(r => ltv > (r.ltvMin - 0.005) && ltv <= r.ltvMax);
+  if (!row) return null;
+  const ficoBucket = FICO_BUCKETS.find(b => fico >= b);
+  return ficoBucket ? row.rates[ficoBucket] : null;
+}
 
 /* ── Loan-type financed upfront fees ── */
 /* VA funding fee schedule (purchase, financed):
@@ -891,6 +930,7 @@ function syncLoanFields(){
 
   updateMiPanel(ltv);
   if ($('q_type').value === 'va') updateVaHint();
+  if ($('q_type').value === 'conv') applyPmiSuggestion();
 }
 
 function updateMiPanel(ltv){
@@ -901,20 +941,52 @@ function updateMiHint(){
   const loan = cleanNum($('q_loan').value);
   const rate = cleanNum($('mi_rate').value);
   const mode = $('mi_mode').value;
+  const fico = cleanNum($('q_fico').value);
+  const price = cleanNum($('q_price').value);
+  const ltv = price > 0 ? (loan/price)*100 : 0;
+  const isConv = $('q_type').value === 'conv';
+  const ficoLabel = pmiBucketLabel(fico);
+  const gridLine = (isConv && pmiAutoFill && ficoLabel && ltv > 80)
+    ? ` <em style="color:var(--silver-dark);font-style:normal;font-weight:500;">(grid: LTV ${ltv.toFixed(1)}% &middot; FICO ${ficoLabel})</em>`
+    : '';
   if (loan <= 0 || rate <= 0) { $('miHint').textContent = 'Enter a rate to preview the impact.'; return; }
   if (mode === 'monthly') {
     const mo = loan * (rate/100) / 12;
-    $('miHint').innerHTML = `<strong>≈ ${fmt(mo)}/mo</strong> on monthly payment &middot; not in cash to close.`;
+    $('miHint').innerHTML = `<strong>≈ ${fmt(mo)}/mo</strong> on monthly payment &middot; not in cash to close.${gridLine}`;
   } else if (mode === 'upfront') {
     const upfront = loan * (rate/100);
-    $('miHint').innerHTML = `<strong>${fmt(upfront)}</strong> added to closing costs (paid at close).`;
+    $('miHint').innerHTML = `<strong>${fmt(upfront)}</strong> added to closing costs (paid at close).${gridLine}`;
   } else {
     const upfront = loan * (rate/100);
-    $('miHint').innerHTML = `<strong>${fmt(upfront)}</strong> financed into loan &middot; not in cash to close, increases base loan.`;
+    $('miHint').innerHTML = `<strong>${fmt(upfront)}</strong> financed into loan &middot; not in cash to close, increases base loan.${gridLine}`;
   }
 }
-$('mi_rate').addEventListener('input', updateMiHint);
+/* PMI auto-fill is suspended once user manually edits mi_rate. Cleared
+   field, FICO change, or loan-type change re-enables the suggestion. */
+let pmiAutoFill = true;
+$('mi_rate').addEventListener('input', ()=>{
+  pmiAutoFill = !$('mi_rate').value;
+  updateMiHint();
+});
 $('mi_mode').addEventListener('change', updateMiHint);
+
+function applyPmiSuggestion(){
+  if ($('q_type').value !== 'conv') return;
+  const price = cleanNum($('q_price').value);
+  const loan  = cleanNum($('q_loan').value);
+  const ltv   = price > 0 ? (loan/price)*100 : 0;
+  const fico  = cleanNum($('q_fico').value);
+  if (ltv <= 80 || fico < 620) return;
+  const rate = lookupPmiRate(ltv, fico);
+  if (rate == null) return;
+  if (pmiAutoFill) {
+    $('mi_rate').value = rate;
+    if ($('mi_mode').value !== 'monthly') $('mi_mode').value = 'monthly';
+  }
+  updateMiHint();
+}
+$('q_fico').addEventListener('input', ()=>{ pmiAutoFill = true; applyPmiSuggestion(); });
+$('q_type').addEventListener('change', ()=>{ pmiAutoFill = true; updateVaPanel(); applyPmiSuggestion(); });
 
 function updateVaPanel(){
   const isVA = $('q_type').value === 'va';
@@ -940,7 +1012,6 @@ function updateVaHint(){
   const downPct = (100 - ltv).toFixed(1);
   $('vaHint').innerHTML = `<strong>${(rate*100).toFixed(2)}% = ${fmt(fee)}</strong> financed &middot; ${downPct}% down, ${firstUse ? 'first-time' : 'subsequent'} use.`;
 }
-$('q_type').addEventListener('change', updateVaPanel);
 $('va_firstUse').addEventListener('change', updateVaHint);
 $('va_exempt').addEventListener('change', updateVaHint);
 

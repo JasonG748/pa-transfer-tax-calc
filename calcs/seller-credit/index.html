@@ -70,8 +70,10 @@
     outline:none; border-color:var(--kelly); box-shadow:0 0 0 3px rgba(0,112,60,0.18);
   }
   select:disabled { background:var(--silver-light); color:var(--silver-dark); cursor:not-allowed; }
-  .has-prefix { padding-left:34px; }
-  .prefix { position:absolute; left:14px; top:33px; color:var(--silver-dark); font-weight:700; font-size:1rem; pointer-events:none; }
+  .has-prefix { padding-left:13px; }
+  .field.filled .has-prefix { padding-left:34px; }
+  .prefix { position:absolute; left:14px; top:33px; color:var(--silver-dark); font-weight:700; font-size:1rem; pointer-events:none; display:none; }
+  .field.filled .prefix { display:block; }
   .btn {
     width:100%; padding:13px; background:var(--kelly); color:var(--white);
     border:none; border-radius:8px; font-family:'Figtree',sans-serif;
@@ -179,6 +181,7 @@
   $('price').addEventListener('input', function(){
     const r = this.value.replace(/[^0-9]/g,'');
     this.value = r ? parseInt(r).toLocaleString('en-US') : '';
+    this.closest('.field').classList.toggle('filled', this.value.trim() !== '');
   });
 
   /* Investment is a flat 2% regardless of LTV — disable the LTV picker there */

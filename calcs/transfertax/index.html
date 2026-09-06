@@ -112,11 +112,14 @@
     left:14px;
     top:38px;
     font-size:1rem;
-    color:var(--cream-dark);
+    color:var(--silver-dark);
     pointer-events:none;
-    font-weight:600;
+    font-weight:700;
+    display:none;
   }
-  .input-group .has-prefix { padding-left:28px; }
+  .input-group.filled .input-prefix { display:block; }
+  .input-group .has-prefix { padding-left:14px; }
+  .input-group.filled .has-prefix { padding-left:30px; }
   .ac-dropdown {
     position:absolute;
     top:100%;
@@ -354,6 +357,7 @@ const gM=q=>V.filter(v=>v.m.toLowerCase().includes(q)||v.c.toLowerCase().include
 $('price').addEventListener('input',function(){
   let r=this.value.replace(/[^0-9]/g,'');
   if(r)this.value=parseInt(r).toLocaleString('en-US');
+  this.closest('.input-group').classList.toggle('filled', this.value.trim()!=='');
 });
 
 function rD(m){

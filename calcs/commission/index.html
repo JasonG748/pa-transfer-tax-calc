@@ -70,12 +70,15 @@
   input[type="text"]:focus {
     outline:none; border-color:var(--kelly); box-shadow:0 0 0 3px rgba(0,112,60,0.18);
   }
-  .has-prefix { padding-left:34px; }
-  .has-suffix { padding-right:44px; }
+  .has-prefix { padding-left:13px; }
+  .has-suffix { padding-right:13px; }
+  .field.filled .has-prefix { padding-left:34px; }
+  .field.filled .has-suffix { padding-right:44px; }
   .prefix, .suffix {
     position:absolute; top:33px; color:var(--silver-dark);
-    font-weight:700; font-size:1rem; pointer-events:none;
+    font-weight:700; font-size:1rem; pointer-events:none; display:none;
   }
+  .field.filled .prefix, .field.filled .suffix { display:block; }
   .prefix { left:14px; }
   .suffix { right:14px; }
   .btn {
@@ -223,6 +226,14 @@
   const $ = id => document.getElementById(id);
   const fmt = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2});
   const cleanInt = s => parseFloat(String(s||'').replace(/[^0-9.]/g,'')) || 0;
+
+  /* Show the $/%/bps symbol only once the field has a value */
+  document.querySelectorAll('.field .has-prefix, .field .has-suffix').forEach(inp => {
+    const field = inp.closest('.field');
+    const sync = () => field.classList.toggle('filled', inp.value.trim() !== '');
+    inp.addEventListener('input', sync);
+    sync();
+  });
 
   /* Comma-format the whole-dollar inputs as the user types */
   ['r_price','lo_loan','ins_prem'].forEach(id => {

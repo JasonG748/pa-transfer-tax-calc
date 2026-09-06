@@ -48,7 +48,7 @@
     font-weight:500;
   }
   .container {
-    max-width:780px;
+    max-width:1000px;
     margin:0 auto;
     padding:24px 18px 40px;
   }
@@ -85,11 +85,14 @@
     line-height:1.5;
   }
   .grid {
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(260px, 420px));
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
     gap:16px;
   }
   .card {
+    flex:1 1 260px;
+    max-width:300px;
     background:var(--white);
     border-radius:10px;
     box-shadow:var(--shadow);

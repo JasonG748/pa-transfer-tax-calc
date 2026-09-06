@@ -98,6 +98,20 @@
   .result .amt { font-size:2rem; font-weight:800; color:var(--kelly); letter-spacing:-0.01em; }
   .result .amt.kellywhite { color:var(--white); }
   .result .sub { font-size:0.82rem; color:var(--silver); margin-top:6px; font-weight:500; }
+  /* Realtor split → take-home */
+  .split-block { display:none; margin-top:14px; }
+  .split-block.visible { display:block; }
+  .split-block .field { position:relative; }
+  .personal-box {
+    margin-top:14px; padding:16px 18px; text-align:center;
+    background:var(--kelly-light); border:1.5px solid var(--kelly); border-radius:var(--radius);
+  }
+  .personal-box .lbl {
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--kelly-dark); font-weight:600; margin-bottom:2px;
+  }
+  .personal-box .amt { font-size:1.8rem; font-weight:800; color:var(--kelly-dark); letter-spacing:-0.01em; }
+  .personal-box .sub { font-size:0.8rem; color:var(--kelly-dark); margin-top:4px; font-weight:500; opacity:0.85; }
   /* Insurance joke section */
   .joke {
     display:none; margin-top:18px; padding:20px; text-align:center;
@@ -144,9 +158,22 @@
     </div>
     <button class="btn" id="r_btn">Equate</button>
     <div class="result" id="r_result">
-      <div class="lbl">Realtor Commission</div>
+      <div class="lbl">Gross Commission</div>
       <div class="amt" id="r_amt"></div>
       <div class="sub" id="r_sub"></div>
+    </div>
+
+    <div class="split-block" id="r_split_block">
+      <div class="field">
+        <label for="r_split">My Split with Brokerage / Team</label>
+        <input type="text" id="r_split" class="has-suffix" placeholder="70" inputmode="decimal" autocomplete="off">
+        <span class="suffix">%</span>
+      </div>
+      <div class="personal-box" id="r_personal_box">
+        <div class="lbl">My Take-Home Commission</div>
+        <div class="amt" id="r_personal"></div>
+        <div class="sub" id="r_personal_sub"></div>
+      </div>
     </div>
   </div>
 
@@ -205,16 +232,31 @@
     });
   });
 
-  /* Realtor: sales price x commission % */
+  /* Realtor: sales price x commission % → gross, then split → take-home */
+  let rGross = 0;
+  function renderPersonal(){
+    const split = cleanInt($('r_split').value);
+    if (rGross <= 0 || split <= 0) {
+      $('r_personal').textContent = '—';
+      $('r_personal_sub').textContent = 'Enter your split %';
+      return;
+    }
+    const personal = rGross * (split / 100);
+    $('r_personal').textContent = fmt(personal);
+    $('r_personal_sub').textContent = `${split}% of ${fmt(rGross)} gross`;
+  }
   $('r_btn').addEventListener('click', () => {
     const price = cleanInt($('r_price').value);
     const pct = cleanInt($('r_pct').value);
     if (price <= 0) { $('r_price').focus(); return; }
-    const commission = price * (pct / 100);
-    $('r_amt').textContent = fmt(commission);
+    rGross = price * (pct / 100);
+    $('r_amt').textContent = fmt(rGross);
     $('r_sub').textContent = `${pct}% of ${fmt(price)}`;
     $('r_result').classList.add('visible');
+    $('r_split_block').classList.add('visible');
+    renderPersonal();
   });
+  $('r_split').addEventListener('input', renderPersonal);
 
   /* Loan officer: loan amount x basis points (bps / 10,000) */
   $('lo_btn').addEventListener('click', () => {

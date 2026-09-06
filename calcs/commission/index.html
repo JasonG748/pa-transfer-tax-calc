@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commission Calculator</title>
+<meta name="description" content="Quick commission calculators from the Mortgage Banker of the People — realtor commission by sales price, loan officer comp by basis points.">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --kelly: #00703C;
+    --kelly-dark: #004D27;
+    --kelly-light: #E6F2EB;
+    --silver: #A5ACAF;
+    --silver-dark: #6B7174;
+    --silver-light: #E8EAEB;
+    --black: #0A0A0A;
+    --charcoal: #2A2A2A;
+    --white: #FFFFFF;
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    --radius: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Figtree',sans-serif;
+    background:var(--silver-light);
+    color:var(--black);
+    min-height:100vh;
+  }
+  header {
+    background:var(--black);
+    padding:22px 0;
+    text-align:center;
+    border-bottom:3px solid var(--kelly);
+  }
+  header h1 { font-weight:700; font-size:1.5rem; color:var(--white); letter-spacing:-0.01em; }
+  header h1 span { color:var(--kelly); }
+  header p {
+    color:var(--silver); font-size:0.74rem; margin-top:4px;
+    letter-spacing:0.06em; text-transform:uppercase; font-weight:500;
+  }
+  .container { max-width:680px; margin:0 auto; padding:24px 18px 40px; }
+  .nav { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  .nav a {
+    color:var(--charcoal); text-decoration:none; font-size:0.82rem; font-weight:600;
+    padding:7px 13px; background:var(--white); border:1.5px solid var(--silver);
+    border-radius:7px; transition:all 0.15s;
+  }
+  .nav a:hover { border-color:var(--kelly); color:var(--kelly); }
+  .nav a.home { background:var(--black); color:var(--white); border-color:var(--black); }
+  .nav a.home:hover { background:var(--kelly); border-color:var(--kelly); }
+  .card {
+    background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:24px 24px 22px; margin-bottom:18px;
+  }
+  .card-title {
+    font-weight:700; font-size:0.78rem; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--kelly); margin-bottom:4px;
+  }
+  .card-note { font-size:0.82rem; color:var(--silver-dark); margin-bottom:16px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:520px){ .grid-2 { grid-template-columns:1fr; } }
+  .field { position:relative; }
+  label { display:block; font-weight:600; font-size:0.82rem; margin-bottom:5px; color:var(--black); }
+  input[type="text"] {
+    width:100%; padding:11px 13px; border:1.5px solid var(--silver);
+    border-radius:8px; font-family:'Figtree',sans-serif; font-size:0.95rem;
+    color:var(--black); background:var(--white); transition:border-color 0.2s, box-shadow 0.2s;
+  }
+  input[type="text"]:focus {
+    outline:none; border-color:var(--kelly); box-shadow:0 0 0 3px rgba(0,112,60,0.18);
+  }
+  .has-prefix { padding-left:34px; }
+  .has-suffix { padding-right:44px; }
+  .prefix, .suffix {
+    position:absolute; top:33px; color:var(--silver-dark);
+    font-weight:700; font-size:1rem; pointer-events:none;
+  }
+  .prefix { left:14px; }
+  .suffix { right:14px; }
+  .btn {
+    width:100%; padding:13px; background:var(--kelly); color:var(--white);
+    border:none; border-radius:8px; font-family:'Figtree',sans-serif;
+    font-size:1rem; font-weight:700; cursor:pointer;
+    transition:background 0.2s, transform 0.1s; margin-top:18px;
+  }
+  .btn:hover { background:var(--kelly-dark); }
+  .btn:active { transform:scale(0.99); }
+  .result {
+    display:none; margin-top:18px; padding:18px 20px; text-align:center;
+    background:var(--black); border-radius:var(--radius); color:var(--white);
+  }
+  .result.visible { display:block; }
+  .result .lbl {
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--silver); font-weight:500; margin-bottom:4px;
+  }
+  .result .amt { font-size:2rem; font-weight:800; color:var(--kelly); letter-spacing:-0.01em; }
+  .result .amt.kellywhite { color:var(--white); }
+  .result .sub { font-size:0.82rem; color:var(--silver); margin-top:6px; font-weight:500; }
+  /* Insurance joke section */
+  .joke {
+    display:none; margin-top:18px; padding:20px; text-align:center;
+    background:var(--kelly-light); border-radius:var(--radius);
+    border:1.5px dashed var(--kelly); color:var(--kelly-dark);
+    font-size:1rem; font-weight:600; line-height:1.5;
+  }
+  .joke.visible { display:block; }
+  footer {
+    text-align:center; padding:22px 18px; font-size:0.8rem;
+    color:var(--charcoal); font-weight:600;
+  }
+  footer a { color:var(--kelly); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Commission <span>Calculator</span></h1>
+  <p>What&rsquo;s My Commission?</p>
+</header>
+
+<div class="container">
+  <nav class="nav">
+    <a href="/" class="home">&larr; Home</a>
+    <a href="/calcs/">All Calcs</a>
+  </nav>
+
+  <!-- REALTOR -->
+  <div class="card">
+    <div class="card-title">Realtor Commission</div>
+    <div class="card-note">Sales price &times; commission rate.</div>
+    <div class="grid-2">
+      <div class="field">
+        <label for="r_price">Sales Price</label>
+        <span class="prefix">$</span>
+        <input type="text" id="r_price" class="has-prefix" placeholder="350,000" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="r_pct">Commission Rate</label>
+        <input type="text" id="r_pct" class="has-suffix" placeholder="3" inputmode="decimal" autocomplete="off">
+        <span class="suffix">%</span>
+      </div>
+    </div>
+    <button class="btn" id="r_btn">Equate</button>
+    <div class="result" id="r_result">
+      <div class="lbl">Realtor Commission</div>
+      <div class="amt" id="r_amt"></div>
+      <div class="sub" id="r_sub"></div>
+    </div>
+  </div>
+
+  <!-- LOAN OFFICER -->
+  <div class="card">
+    <div class="card-title">Loan Officer Commission</div>
+    <div class="card-note">Loan amount &times; comp in basis points (100 bps = 1%).</div>
+    <div class="grid-2">
+      <div class="field">
+        <label for="lo_loan">Loan Amount</label>
+        <span class="prefix">$</span>
+        <input type="text" id="lo_loan" class="has-prefix" placeholder="315,000" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="lo_bps">Comp</label>
+        <input type="text" id="lo_bps" class="has-suffix" placeholder="125" inputmode="numeric" autocomplete="off">
+        <span class="suffix">bps</span>
+      </div>
+    </div>
+    <button class="btn" id="lo_btn">Equate</button>
+    <div class="result" id="lo_result">
+      <div class="lbl">Loan Officer Commission</div>
+      <div class="amt" id="lo_amt"></div>
+      <div class="sub" id="lo_sub"></div>
+    </div>
+  </div>
+
+  <!-- INSURANCE (joke) -->
+  <div class="card">
+    <div class="card-title">Insurance Producer Commission</div>
+    <div class="card-note">Enter the policy premium and hit Equate.</div>
+    <div class="field">
+      <label for="ins_prem">Policy Premium Amount</label>
+      <span class="prefix">$</span>
+      <input type="text" id="ins_prem" class="has-prefix" placeholder="1,400" inputmode="numeric" autocomplete="off">
+    </div>
+    <button class="btn" id="ins_btn">Equate</button>
+    <div class="joke" id="ins_joke">
+      &hellip;nevermind. Does anyone actually know how these folks in insurance get paid? &#128514;
+    </div>
+  </div>
+</div>
+
+<footer>Built by the <a href="/">Mortgage Banker of the People</a></footer>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2});
+  const cleanInt = s => parseFloat(String(s||'').replace(/[^0-9.]/g,'')) || 0;
+
+  /* Comma-format the whole-dollar inputs as the user types */
+  ['r_price','lo_loan','ins_prem'].forEach(id => {
+    $(id).addEventListener('input', function(){
+      const r = this.value.replace(/[^0-9]/g,'');
+      this.value = r ? parseInt(r).toLocaleString('en-US') : '';
+    });
+  });
+
+  /* Realtor: sales price x commission % */
+  $('r_btn').addEventListener('click', () => {
+    const price = cleanInt($('r_price').value);
+    const pct = cleanInt($('r_pct').value);
+    if (price <= 0) { $('r_price').focus(); return; }
+    const commission = price * (pct / 100);
+    $('r_amt').textContent = fmt(commission);
+    $('r_sub').textContent = `${pct}% of ${fmt(price)}`;
+    $('r_result').classList.add('visible');
+  });
+
+  /* Loan officer: loan amount x basis points (bps / 10,000) */
+  $('lo_btn').addEventListener('click', () => {
+    const loan = cleanInt($('lo_loan').value);
+    const bps = cleanInt($('lo_bps').value);
+    if (loan <= 0) { $('lo_loan').focus(); return; }
+    const commission = loan * (bps / 10000);
+    $('lo_amt').textContent = fmt(commission);
+    $('lo_sub').textContent = `${bps} bps (${(bps/100)}%) of ${fmt(loan)}`;
+    $('lo_result').classList.add('visible');
+  });
+
+  /* Insurance: the punchline */
+  $('ins_btn').addEventListener('click', () => {
+    $('ins_joke').classList.add('visible');
+  });
+
+  /* Enter key triggers each section's Equate */
+  const enterTrigger = (ids, btn) => ids.forEach(id =>
+    $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $(btn).click(); })
+  );
+  enterTrigger(['r_price','r_pct'], 'r_btn');
+  enterTrigger(['lo_loan','lo_bps'], 'lo_btn');
+  enterTrigger(['ins_prem'], 'ins_btn');
+</script>
+</body>
+</html>

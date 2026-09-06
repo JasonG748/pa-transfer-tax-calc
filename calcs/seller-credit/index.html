@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Max Seller Credit Calculator</title>
+<meta name="description" content="Fannie Mae maximum seller assist (interested-party contribution) by occupancy and LTV — percentage and dollar amount from the Mortgage Banker of the People.">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --kelly: #00703C;
+    --kelly-dark: #004D27;
+    --kelly-light: #E6F2EB;
+    --silver: #A5ACAF;
+    --silver-dark: #6B7174;
+    --silver-light: #E8EAEB;
+    --black: #0A0A0A;
+    --charcoal: #2A2A2A;
+    --white: #FFFFFF;
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    --radius: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Figtree',sans-serif;
+    background:var(--silver-light);
+    color:var(--black);
+    min-height:100vh;
+  }
+  header {
+    background:var(--black);
+    padding:22px 0;
+    text-align:center;
+    border-bottom:3px solid var(--kelly);
+  }
+  header h1 { font-weight:700; font-size:1.5rem; color:var(--white); letter-spacing:-0.01em; }
+  header h1 span { color:var(--kelly); }
+  header p {
+    color:var(--silver); font-size:0.74rem; margin-top:4px;
+    letter-spacing:0.06em; text-transform:uppercase; font-weight:500;
+  }
+  .container { max-width:640px; margin:0 auto; padding:24px 18px 40px; }
+  .nav { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  .nav a {
+    color:var(--charcoal); text-decoration:none; font-size:0.82rem; font-weight:600;
+    padding:7px 13px; background:var(--white); border:1.5px solid var(--silver);
+    border-radius:7px; transition:all 0.15s;
+  }
+  .nav a:hover { border-color:var(--kelly); color:var(--kelly); }
+  .nav a.home { background:var(--black); color:var(--white); border-color:var(--black); }
+  .nav a.home:hover { background:var(--kelly); border-color:var(--kelly); }
+  .card {
+    background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:24px 24px 22px;
+  }
+  .card-title {
+    font-weight:700; font-size:0.78rem; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--kelly); margin-bottom:4px;
+  }
+  .card-note { font-size:0.82rem; color:var(--silver-dark); margin-bottom:16px; }
+  .field { position:relative; margin-bottom:14px; }
+  .field:last-of-type { margin-bottom:0; }
+  label { display:block; font-weight:600; font-size:0.82rem; margin-bottom:5px; color:var(--black); }
+  input[type="text"], select {
+    width:100%; padding:11px 13px; border:1.5px solid var(--silver);
+    border-radius:8px; font-family:'Figtree',sans-serif; font-size:0.95rem;
+    color:var(--black); background:var(--white); transition:border-color 0.2s, box-shadow 0.2s;
+  }
+  input[type="text"]:focus, select:focus {
+    outline:none; border-color:var(--kelly); box-shadow:0 0 0 3px rgba(0,112,60,0.18);
+  }
+  select:disabled { background:var(--silver-light); color:var(--silver-dark); cursor:not-allowed; }
+  .has-prefix { padding-left:34px; }
+  .prefix { position:absolute; left:14px; top:33px; color:var(--silver-dark); font-weight:700; font-size:1rem; pointer-events:none; }
+  .btn {
+    width:100%; padding:13px; background:var(--kelly); color:var(--white);
+    border:none; border-radius:8px; font-family:'Figtree',sans-serif;
+    font-size:1rem; font-weight:700; cursor:pointer;
+    transition:background 0.2s, transform 0.1s; margin-top:18px;
+  }
+  .btn:hover { background:var(--kelly-dark); }
+  .btn:active { transform:scale(0.99); }
+  .result {
+    display:none; margin-top:18px; padding:20px; text-align:center;
+    background:var(--black); border-radius:var(--radius); color:var(--white);
+  }
+  .result.visible { display:block; }
+  .result .lbl {
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--silver); font-weight:500; margin-bottom:6px;
+  }
+  .result .pct { font-size:1.3rem; font-weight:700; color:var(--white); }
+  .result .amt { font-size:2.1rem; font-weight:800; color:var(--kelly); letter-spacing:-0.01em; margin-top:2px; }
+  .result .sub { font-size:0.82rem; color:var(--silver); margin-top:8px; font-weight:500; }
+  .asterisk {
+    margin-top:16px; padding:14px 16px;
+    background:var(--kelly-light); border-left:3px solid var(--kelly);
+    border-radius:6px; font-size:0.85rem; color:var(--kelly-dark);
+    font-weight:600; line-height:1.5;
+  }
+  .disclaimer {
+    margin-top:16px; font-size:0.72rem; color:var(--silver-dark);
+    line-height:1.5; text-align:center; padding:0 6px;
+  }
+  footer {
+    text-align:center; padding:22px 18px; font-size:0.8rem;
+    color:var(--charcoal); font-weight:600;
+  }
+  footer a { color:var(--kelly); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Max Seller <span>Credit</span></h1>
+  <p>What&rsquo;s My Max Seller Assist?</p>
+</header>
+
+<div class="container">
+  <nav class="nav">
+    <a href="/" class="home">&larr; Home</a>
+    <a href="/calcs/">All Calcs</a>
+  </nav>
+
+  <div class="card">
+    <div class="card-title">Fannie Mae Seller Assist Limit</div>
+    <div class="card-note">Max interested-party contribution by occupancy and loan-to-value.</div>
+
+    <div class="field">
+      <label for="occ">Occupancy</label>
+      <select id="occ">
+        <option value="primary">Primary Residence</option>
+        <option value="second">Second Home</option>
+        <option value="investment">Investment Property</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="ltv">Loan-to-Value (LTV / CLTV)</label>
+      <select id="ltv">
+        <option value="high">Greater than 90%</option>
+        <option value="mid">75.01% – 90%</option>
+        <option value="low">75% or less</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="price">Sales Price</label>
+      <span class="prefix">$</span>
+      <input type="text" id="price" class="has-prefix" placeholder="350,000" inputmode="numeric" autocomplete="off">
+    </div>
+
+    <button class="btn" id="btn">Equate</button>
+
+    <div class="result" id="result">
+      <div class="lbl">Maximum Seller Credit</div>
+      <div class="pct" id="pct"></div>
+      <div class="amt" id="amt"></div>
+      <div class="sub" id="sub"></div>
+    </div>
+
+    <div class="asterisk">
+      *** This dollar amount can never exceed the amount of your buyer&rsquo;s actual closing costs!
+    </div>
+
+    <div class="disclaimer">
+      Based on Fannie Mae interested-party contribution (IPC) limits: primary/second home 3% (LTV&nbsp;&gt;&nbsp;90%), 6% (75.01–90%), 9% (&le;&nbsp;75%); investment property 2% at any LTV. Verify against current Fannie Mae guidelines and the specific loan program.
+    </div>
+  </div>
+</div>
+
+<footer>Built by the <a href="/">Mortgage Banker of the People</a></footer>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2});
+  const cleanInt = s => parseFloat(String(s||'').replace(/[^0-9.]/g,'')) || 0;
+
+  $('price').addEventListener('input', function(){
+    const r = this.value.replace(/[^0-9]/g,'');
+    this.value = r ? parseInt(r).toLocaleString('en-US') : '';
+  });
+
+  /* Investment is a flat 2% regardless of LTV — disable the LTV picker there */
+  function syncLtvState(){
+    const isInv = $('occ').value === 'investment';
+    $('ltv').disabled = isInv;
+  }
+  $('occ').addEventListener('change', syncLtvState);
+  syncLtvState();
+
+  function maxPct(){
+    if ($('occ').value === 'investment') return 2;
+    switch ($('ltv').value) {
+      case 'high': return 3;   /* LTV > 90% */
+      case 'mid':  return 6;   /* 75.01–90% */
+      case 'low':  return 9;   /* ≤ 75% */
+      default:     return 3;
+    }
+  }
+  const ltvLabel = { high:'LTV > 90%', mid:'LTV 75.01–90%', low:'LTV ≤ 75%' };
+  const occLabel = { primary:'Primary Residence', second:'Second Home', investment:'Investment Property' };
+
+  $('btn').addEventListener('click', () => {
+    const price = cleanInt($('price').value);
+    if (price <= 0) { $('price').focus(); return; }
+    const pct = maxPct();
+    const dollars = price * (pct / 100);
+    const isInv = $('occ').value === 'investment';
+    $('pct').textContent = `${pct}% of sales price`;
+    $('amt').textContent = fmt(dollars);
+    $('sub').textContent = isInv
+      ? `${occLabel[$('occ').value]} · any LTV · ${fmt(price)} sales price`
+      : `${occLabel[$('occ').value]} · ${ltvLabel[$('ltv').value]} · ${fmt(price)} sales price`;
+    $('result').classList.add('visible');
+  });
+
+  $('price').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn').click(); });
+</script>
+</body>
+</html>

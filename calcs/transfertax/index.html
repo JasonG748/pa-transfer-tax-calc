@@ -238,6 +238,19 @@
     text-align:center;
     padding:0 8px;
   }
+  .rate-flag {
+    display:none;
+    margin-top:16px;
+    padding:13px 16px;
+    background:var(--kelly-light);
+    border-left:3px solid var(--kelly);
+    border-radius:6px;
+    font-size:0.84rem;
+    color:var(--kelly-dark);
+    font-weight:600;
+    line-height:1.5;
+  }
+  .rate-flag.visible { display:block; }
   footer {
     text-align:center;
     padding:24px 20px;
@@ -245,6 +258,8 @@
     color:var(--ravenswood);
     font-weight:600;
   }
+  footer a { color:var(--kelly); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
   .nav { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; padding:0 2px; }
   .nav a { color:var(--charcoal); text-decoration:none; font-size:0.82rem; font-weight:600; padding:7px 13px; background:var(--white); border:1.5px solid var(--silver); border-radius:7px; transition:all 0.15s; }
   .nav a:hover { border-color:var(--kelly); color:var(--kelly); }
@@ -305,14 +320,15 @@
         <div id="sellerLines"></div>
       </div>
     </div>
+    <div class="rate-flag" id="rateFlag"></div>
     <div class="disclaimer">
-      Assumes customary 50/50 buyer/seller split. PA state portion is always 1%.
-      Local rates per FNF PA Transfer Tax Variations chart (Jan 2026).
+      Assumes the customary 50/50 buyer/seller split (negotiable). PA state portion is always 1%.
+      Local rates current as of October 2026 and reflect Philadelphia's July 1, 2025 increase to 3.578% city.
       Consult your title company or attorney for final figures.
     </div>
   </div>
 </div>
-<footer>Built by the Mortgage Banker of the People</footer>
+<footer>Built by the <a href="/">Mortgage Banker of the People</a> &middot; <a href="https://x.com/MortgageBanker" target="_blank" rel="noopener">@MortgageBanker</a></footer>
 <script>
 const V=[
   {m:"Bellevue Boro",c:"Allegheny",r:1.5},{m:"Bethel Park Municipality",c:"Allegheny",r:1.5},
@@ -417,6 +433,21 @@ $('calcBtn').addEventListener('click',function(){
   const lines=lH('PA State',SR/2,st/2)+lH('Local',lr/2,lt/2);
   $('buyerLines').innerHTML=lines;
   $('sellerLines').innerHTML=lines;
+
+  /* High-rate callout */
+  const flag=$('rateFlag');
+  let msg='';
+  if(tr>=4.5){
+    msg=`<strong>${sel?sel.m:'This area'}</strong> is among the most expensive places to transfer a deed in Pennsylvania — most of the state pays just 2%.`;
+  } else if(tr>=3){
+    msg=`Heads up: ${fP(tr)} runs well above the 2% most of Pennsylvania pays.`;
+  }
+  if(sel && /Pittsburgh City/i.test(sel.m)){
+    msg += ` Pittsburgh has two school-district rates — confirm the right one (Pittsburgh SD = 5%, Baldwin-Whitehall = 4.5%).`;
+  }
+  if(msg){ flag.innerHTML=msg; flag.classList.add('visible'); }
+  else { flag.classList.remove('visible'); }
+
   $('results').classList.add('visible');
   $('results').scrollIntoView({behavior:'smooth',block:'start'});
 });
